@@ -1,0 +1,53 @@
+{
+  "name": "schedule-task-application",
+  "version": "1.0.0",
+  "description": "Internal schedule task automation service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node scripts/copy-openapi.js",
+    "start": "node dist/index.js",
+    "start:worker": "node dist/worker.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand --testPathPattern=unit",
+    "test:integration": "jest --runInBand --testPathPattern=integration",
+    "test:smoke": "tsx scripts/run-smoke.ts",
+    "verify:setup": "tsx scripts/verify-setup.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "lint": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "bullmq": "^5.53.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.6.1",
+    "nodemailer": "^7.0.3",
+    "pino": "^9.7.0",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0",
+    "zod": "^3.25.56"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.30",
+    "@types/nodemailer": "^6.4.17",
+    "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@types/yamljs": "^0.2.34",
+    "jest": "^29.7.0",
+    "prisma": "^6.9.0",
+    "supertest": "^7.1.1",
+    "ts-jest": "^29.3.4",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

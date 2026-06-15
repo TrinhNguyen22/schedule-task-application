@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ScheduleStatus {
+  PENDING
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TaskType {
+  FILE_READ
+  FILE_IMPORT
+  FORM_FILL
+  EMAIL
+}
+
+enum TaskRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+model Schedule {
+  id             String         @id @default(uuid())
+  type           TaskType
+  payload        Json
+  scheduleAt     DateTime?
+  cronExpr       String?
+  timezone       String         @default("Asia/Ho_Chi_Minh")
+  status         ScheduleStatus @default(PENDING)
+  maxRetries     Int            @default(3)
+  timeoutMs      Int            @default(30000)
+  idempotencyKey String?        @unique
+  bullJobId      String?
+  source         String         @default("api")
+  correlationId  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  cancelledAt    DateTime?
+  runs           TaskRun[]
+
+  @@index([status])
+  @@index([scheduleAt])
+  @@index([createdAt])
+}
+
+model TaskRun {
+  id            String        @id @default(uuid())
+  scheduleId    String
+  schedule      Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  status        TaskRunStatus
+  attempt       Int           @default(1)
+  correlationId String
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  durationMs    Int?
+  result        Json?
+  errorCode     String?
+  errorMessage  String?
+  bullJobId     String?
+
+  @@unique([scheduleId, attempt])
+  @@index([scheduleId])
+  @@index([startedAt])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  idempotencyKey String   @unique
+  scheduleId     String
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@index([expiresAt])
+}

@@ -1,0 +1,92 @@
+### Schedule Task Application — API Collection
+### Base URL
+@baseUrl = http://localhost:3000
+
+### Health
+GET {{baseUrl}}/health
+
+### Readiness
+GET {{baseUrl}}/ready
+
+### Create Email Schedule (GMT+7)
+POST {{baseUrl}}/api/schedules
+Content-Type: application/json
+x-correlation-id: demo-email-001
+
+{
+  "type": "EMAIL",
+  "scheduleAt": "2026-06-14T08:00:00+07:00",
+  "payload": {
+    "to": ["ops@internal.local"],
+    "subject": "Daily report",
+    "body": "Báo cáo tự động"
+  }
+}
+
+### Push with Idempotency
+POST {{baseUrl}}/api/schedules/push
+Content-Type: application/json
+idempotency-key: push-key-001
+
+{
+  "type": "FILE_READ",
+  "scheduleAt": "2026-06-14T08:05:00+07:00",
+  "payload": {
+    "path": "sample.txt"
+  }
+}
+
+### List Schedules
+GET {{baseUrl}}/api/schedules?page=1&limit=20
+
+### Get Schedule Detail
+GET {{baseUrl}}/api/schedules/{{scheduleId}}
+
+### Cancel Schedule
+PATCH {{baseUrl}}/api/schedules/{{scheduleId}}/cancel
+
+### Pause Cron Schedule
+PATCH {{baseUrl}}/api/schedules/{{scheduleId}}/pause
+
+### Resume Cron Schedule
+PATCH {{baseUrl}}/api/schedules/{{scheduleId}}/resume
+
+### Form Fill Task
+POST {{baseUrl}}/api/schedules
+Content-Type: application/json
+
+{
+  "type": "FORM_FILL",
+  "scheduleAt": "2026-06-14T08:15:00+07:00",
+  "payload": {
+    "template": { "greeting": "Hello {{name}}", "dept": "{{dept}}" },
+    "data": { "name": "Alice", "dept": "IT" }
+  }
+}
+
+### File Import Task
+POST {{baseUrl}}/api/schedules
+Content-Type: application/json
+
+{
+  "type": "FILE_IMPORT",
+  "scheduleAt": "2026-06-14T08:20:00+07:00",
+  "payload": {
+    "paths": ["sample.csv", "sample.json"]
+  }
+}
+
+### Cron Task (08:00 daily VN time)
+POST {{baseUrl}}/api/schedules
+Content-Type: application/json
+
+{
+  "type": "EMAIL",
+  "cronExpr": "0 8 * * *",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "payload": {
+    "to": ["ops@internal.local"],
+    "subject": "Morning cron",
+    "body": "Scheduled at 08:00 GMT+7"
+  }
+}

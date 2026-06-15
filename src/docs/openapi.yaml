@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: Schedule Task Application API
+  version: 1.0.0
+  description: Internal schedule task automation service
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Health
+  - name: Schedules
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      responses:
+        '200':
+          description: Service is alive
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: Database or Redis unavailable
+  /api/schedules:
+    get:
+      tags: [Schedules]
+      summary: List schedules
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, SCHEDULED, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [FILE_READ, FILE_IMPORT, FORM_FILL, EMAIL]
+      responses:
+        '200':
+          description: Paginated schedule list
+    post:
+      tags: [Schedules]
+      summary: Create a schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSchedule'
+      responses:
+        '201':
+          description: Schedule created
+  /api/schedules/push:
+    post:
+      tags: [Schedules]
+      summary: Push schedule from external system
+      parameters:
+        - in: header
+          name: idempotency-key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSchedule'
+      responses:
+        '200':
+          description: Existing schedule returned (idempotent replay)
+        '201':
+          description: New schedule created
+  /api/schedules/{id}:
+    get:
+      tags: [Schedules]
+      summary: Get schedule detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Schedule detail with recent runs
+        '404':
+          description: Not found
+  /api/schedules/{id}/cancel:
+    patch:
+      tags: [Schedules]
+      summary: Cancel a pending or scheduled task
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Schedule cancelled
+        '409':
+          description: Cannot cancel running or terminal schedule
+  /api/schedules/{id}/pause:
+    patch:
+      tags: [Schedules]
+      summary: Pause a cron-based schedule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Schedule paused
+  /api/schedules/{id}/resume:
+    patch:
+      tags: [Schedules]
+      summary: Resume a paused cron schedule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Schedule resumed
+components:
+  schemas:
+    CreateSchedule:
+      type: object
+      required: [type, payload]
+      properties:
+        type:
+          type: string
+          enum: [FILE_READ, FILE_IMPORT, FORM_FILL, EMAIL]
+        payload:
+          type: object
+        scheduleAt:
+          type: string
+          format: date-time
+          example: '2026-06-14T08:00:00+07:00'
+        cronExpr:
+          type: string
+          example: '0 8 * * *'
+        timezone:
+          type: string
+          default: Asia/Ho_Chi_Minh
+        maxRetries:
+          type: integer
+          minimum: 0
+          maximum: 10
+        timeoutMs:
+          type: integer
+          minimum: 1000
+          maximum: 300000
